@@ -8,6 +8,7 @@ router = Router()
 
 
 @router.message(Command(commands=["cancel"]))
+@router.message(F.text == "отмена")
 async def cmd_cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
@@ -20,7 +21,3 @@ async def cmd_cancel(message: Message, state: FSMContext):
 async def callback_cancel(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_text("Действие отменено")
-    # await callback.message.answer(
-    #     text="Действие отменено",
-    #     reply_markup=ReplyKeyboardRemove()
-    # )

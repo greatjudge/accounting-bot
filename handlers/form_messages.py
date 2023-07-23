@@ -7,11 +7,16 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 from keyboards.for_messages import (
-    get_keyboard_fab, available_projects,
-    ItemsCallbackFactory, available_purposes,
-    get_keyboard_confirm, available_types,
-    ConfirmCallbackFactory
+    get_keyboard_confirm,
+    ConfirmCallbackFactory, get_comment_kb
 )
+
+from keyboards.common_kb import (
+    get_keyboard_fab,
+    ItemsCallbackFactory
+)
+
+from keyboards.for_options import available_purposes, available_projects, available_types
 
 
 router = Router()
@@ -22,6 +27,7 @@ class AddMessage(StatesGroup):
     choosing_project = State()
     choosing_type = State()
     choosing_purpose = State()
+    comment = State()
     confirmation = State()
 
 
@@ -115,11 +121,9 @@ async def purpose_chosen(callback: CallbackQuery,
     await state.update_data(purpose=callback_data.value)
 
     data = await state.get_data()
-    text = f'Вы ввели: \n{data_repr(data)}'
+    text = f'Вы ввели: \n{data_repr(data)}\n' + 'Введите комментарий:'
     await callback.message.edit_text(text)
-    await callback.message.edit_reply_markup(
-        reply_markup=get_keyboard_confirm()
-    )
+    await callback.message.edit_reply_markup(reply_markup=get_comment_kb())
 
     # text = f'Вы ввели \nфайл: {data["attached_file"].file_name}\nпроект: {data["project"]}' \
     #        + f'\nтип: {data["type"]}\nназначение: {data["purpose"]}'
@@ -129,7 +133,29 @@ async def purpose_chosen(callback: CallbackQuery,
     # )
 
     await callback.answer()
+    await state.set_state(AddMessage.comment)
+
+
+async def logic_after_comment(message: Message, state: FSMContext):
+    data = await state.get_data()
+    text = f'Вы ввели: \n{data_repr(data)}'
+    await message.answer(
+        text=text,
+        reply_markup=get_keyboard_confirm()
+    )
     await state.set_state(AddMessage.confirmation)
+
+
+@router.callback_query(AddMessage.comment, F.data == 'no_comment')
+async def no_comment_callback(callback: CallbackQuery,
+                              state: FSMContext):
+    await logic_after_comment(callback.message, state)
+
+
+@router.message(AddMessage.comment, F.text)
+async def comment_written(message: Message, state: FSMContext):
+    await state.update_data(comment=message.text)
+    await logic_after_comment(message, state)
 
 
 @router.callback_query(AddMessage.confirmation,
