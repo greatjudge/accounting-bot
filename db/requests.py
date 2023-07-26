@@ -44,7 +44,7 @@ async def add_option(session, option_cls, name: str):
 
 
 async def delete_option(session, option_cls, id: int):
-    session.execute(delete(option_cls).where(option_cls.id == id))
+    await session.execute(delete(option_cls).where(option_cls.id == id))
     await session.commit()
 
 

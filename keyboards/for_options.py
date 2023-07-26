@@ -1,6 +1,8 @@
 from enum import Enum
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from aiogram.filters.callback_data import CallbackData
+
 from db.models import (
     Project, Type, Purpose
 )
@@ -42,6 +44,16 @@ class Action(Enum):
 
 def get_actions_kb():
     kb = [[KeyboardButton(text=item.value)] for item in Action]
+    return ReplyKeyboardMarkup(
+        keyboard=kb
+    )
+
+
+def get_confirm_kb():
+    kb = [
+        [KeyboardButton(text='да')],
+        [KeyboardButton(text='отменить')]
+    ]
     return ReplyKeyboardMarkup(
         keyboard=kb
     )

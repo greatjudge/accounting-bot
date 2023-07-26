@@ -7,7 +7,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from keyboards.for_options import get_options_kb, Option, Action, get_actions_kb
+from keyboards.for_options import get_options_kb, Option, Action, get_actions_kb, get_confirm_kb
 from keyboards.common_kb import get_keyboard_fab, ItemsCallbackFactory
 
 from db.requests import (
@@ -22,6 +22,11 @@ router = Router()
 class EditOption(StatesGroup):
     choose_option = State()
     choose_action = State()
+
+    typing_opt_value = State()
+    choose_opt_value = State()
+
+    confirmation = State()
     adding = State()
     removing = State()
 
@@ -47,28 +52,29 @@ async def option_choosed(message: Message, option: str, state: FSMContext):
 
 @router.message(EditOption.choose_action, F.text == Action.add.value)
 async def add_choosed(message: Message, state: FSMContext):
+    await state.update_data(action=Action.add.value)
     data = await state.get_data()
+    await state.set_state(EditOption.typing_opt_value)
     await message.answer(
         text=f'Введите {data["option"]}',
         reply_markup=ReplyKeyboardRemove()
     )
-    await state.set_state(EditOption.adding)
 
 
-@router.message(EditOption.adding, F.text)
-async def add_option_value(message: Message, state: FSMContext, session: AsyncSession):
+@router.message(EditOption.typing_opt_value, F.text)
+async def opt_value_added(message: Message, state: FSMContext):
+    await state.update_data(option_value=message.text)
     data = await state.get_data()
-    await add_option(session,
-                     Option.option2storage()[data['option']],
-                     message.text)
     await message.answer(
-        text=f'Cохранено {data["option"]} {message.text}'
+        text=f'Хотите добавить {data["option"]} {message.text}?',
+        reply_markup=get_confirm_kb()
     )
-    await state.clear()
+    await state.set_state(EditOption.confirmation)
 
 
 @router.message(EditOption.choose_action, F.text == Action.remove.value)
 async def remove_chosen(message: Message, state: FSMContext, session: AsyncSession):
+    await state.update_data(action=Action.remove.value)
     data = await state.get_data()
 
     option_cls = Option.option2storage()[data['option']]
@@ -81,21 +87,64 @@ async def remove_chosen(message: Message, state: FSMContext, session: AsyncSessi
         reply_markup=get_keyboard_fab(option_id_name.items(),
                                       data['option'], add_cancel=False)
     )
-    await state.set_state(EditOption.removing)
+    await state.set_state(EditOption.choose_opt_value)
 
 
-@router.callback_query(EditOption.removing, ItemsCallbackFactory.filter())
-async def remove_option(callback: CallbackQuery,
-                        callback_data: ItemsCallbackFactory,
-                        state: FSMContext,
-                        session: AsyncSession):
+@router.callback_query(EditOption.choose_opt_value, ItemsCallbackFactory.filter())
+async def option_val_chosen(
+    callback: CallbackQuery,
+    callback_data: ItemsCallbackFactory,
+    state: FSMContext,
+):
+    data = await state.get_data()
+    option_value = (
+        callback_data.value,
+        data['option_id_name'][callback_data.value]
+    )
+    await state.update_data(option_value=option_value)
+
+    await callback.message.answer(
+        f'Вы действительно хотите удалить {data["option"]} {option_value[1]}?',
+        reply_markup=get_confirm_kb()
+    )
+    await state.set_state(EditOption.confirmation)
+
+
+@router.message(EditOption.confirmation, F.text == 'да')
+async def confirm(message: Message, state: FSMContext, session: AsyncSession):
+    data = await state.get_data()
+    if data['action'] == Action.add.value:
+        await add_option_value(message, state, session)
+    elif data['action'] == Action.remove.value:
+        await remove_option(message, state, session)
+    await state.clear()
+
+
+async def add_option_value(message: Message, state: FSMContext, session: AsyncSession):
+    data = await state.get_data()
+    await add_option(session,
+                     Option.option2storage()[data['option']],
+                     data["option_value"])
+    await message.answer(
+        text=f'Cохранено {data["option"]} {data["option_value"]}',
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
+async def remove_option(
+        message: Message,
+        state: FSMContext,
+        session: AsyncSession
+):
     data = await state.get_data()
 
-    await delete_option(session,
-                        Option.option2storage()[data['option']],
-                        callback_data.value)
-
-    await callback.message.edit_text(
-        text=f'Вы удалили {callback_data.name} {data["option_id_name"][callback_data.value]}'
+    await delete_option(
+        session,
+        Option.option2storage()[data['option']],
+        int(data['option_value'][0])
     )
-    await state.clear()
+
+    await message.answer(
+        text=f'Вы удалили {data["option"]} {data["option_value"][1]}',
+        reply_markup=ReplyKeyboardRemove()
+    )
