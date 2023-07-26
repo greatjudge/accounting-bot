@@ -12,8 +12,6 @@ from middlewares.db import DbSessionMiddleware
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from db.base import Base
-
 
 async def main():
     db_url = f'postgresql+psycopg://{config.db_user}:{config.db_password}' \

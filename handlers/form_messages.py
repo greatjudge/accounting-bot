@@ -1,13 +1,13 @@
-from aiogram import Router
+from aiogram import Router, Bot, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
-from aiogram import F
 
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config_reader import config
 from keyboards.for_messages import (
     get_keyboard_confirm,
     ConfirmCallbackFactory, get_comment_kb
@@ -37,15 +37,22 @@ class AddMessage(StatesGroup):
     confirmation = State()
 
 
-def data_repr(data: dict) -> str:
+def data_repr(data: dict, add_filename: bool = True) -> str:
     strings = []
-    if 'attached_file' in data:
+    if add_filename and 'attached_file' in data:
         value = data['attached_file'][1]
-        strings.append(f' attached_file: {value}')
-    for key in ('project', 'type', 'purpose'):
+        strings.append(f' файл: {value}')
+
+    for key, name in (
+            ('project', 'проект'),
+            ('type', 'тип'),
+            ('purpose', 'назначение')
+    ):
         key_objs = key + 's'
         if key in data and key_objs in data:
-            strings.append(f' {key}: {data[key_objs][data[key]]}')
+            strings.append(f' {name}: {data[key_objs][data[key]]}')
+    if 'comment' in data:
+        strings.append(f' комментарий: {data["comment"]}')
     return '\n'.join(strings)
 
 
@@ -103,10 +110,7 @@ async def project_chosen(callback: CallbackQuery,
             'types'
         )
     )
-    # await callback.message.answer(
-    #     text='Выберите тип:',
-    #     reply_markup=get_keyboard_fab(available_types, 'types')
-    # )
+
     await state.set_state(AddMessage.choosing_type)
 
 
@@ -128,10 +132,7 @@ async def type_chosen(callback: CallbackQuery,
             'purposes'
         )
     )
-    # await callback.message.answer(
-    #     text='Выберите назначение:',
-    #     reply_markup=get_keyboard_fab(available_purposes, 'purposes')
-    # )
+
     await callback.answer()
     await state.set_state(AddMessage.choosing_purpose)
 
@@ -147,13 +148,6 @@ async def purpose_chosen(callback: CallbackQuery,
     text = f'Вы ввели: \n{data_repr(data)}\n' + 'Введите комментарий:'
     await callback.message.edit_text(text)
     await callback.message.edit_reply_markup(reply_markup=get_comment_kb())
-
-    # text = f'Вы ввели \nфайл: {data["attached_file"].file_name}\nпроект: {data["project"]}' \
-    #        + f'\nтип: {data["type"]}\nназначение: {data["purpose"]}'
-    # await callback.message.answer(
-    #     text=text,
-    #     reply_markup=get_keyboard_confirm()
-    # )
 
     await callback.answer()
     await state.set_state(AddMessage.comment)
@@ -185,16 +179,32 @@ async def comment_written(message: Message, state: FSMContext):
                        ConfirmCallbackFactory.filter(F.value == 'send'))
 async def send(callback: CallbackQuery,
                callback_data: ConfirmCallbackFactory,
-               state: FSMContext):
+               state: FSMContext,
+               bot: Bot):
     data = await state.get_data()
+
+    await send_message2channel(
+        bot,
+        data
+    )
 
     text = f'Вы отправили: \n{data_repr(data)}'
     await callback.message.edit_text(text)
-    # await callback.message.edit_reply_markup(
-    #     reply_markup=None
-    # )
-    # text = f'Вы отправили \nфайл: {data["attached_file"].file_name}\nпроект: {data["project"]}' \
-    #        + f'\nтип: {data["type"]}\nназначение: {data["purpose"]}'
-    # await callback.message.answer(text=text)
     await callback.answer()
     await state.clear()
+
+
+async def send_message2channel(bot: Bot, data):
+    caption = data_repr(data, add_filename=False)
+    if 'attached_file' in data:
+        await bot.send_document(
+            config.channel_id,
+            data['attached_file'][0],
+            caption=caption
+        )
+    elif 'attached_photo' in data:
+        await bot.send_photo(
+            config.channel_id,
+            data['attached_photo'],
+            caption=caption
+        )

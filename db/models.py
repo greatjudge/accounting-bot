@@ -13,6 +13,8 @@ class AccMessage(Base):
     project: Mapped[str]
     type: Mapped[str]
     purpose: Mapped[str]
+    comment: Mapped[str]
+    filename: Mapped[str]
     create_time: Mapped[datetime] = mapped_column(DateTime())
 
     def __repr__(self):

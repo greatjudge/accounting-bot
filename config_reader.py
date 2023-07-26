@@ -18,6 +18,7 @@ class FSMModeEnum(str, Enum):
 
 class Settings(BaseSettings):
     bot_token: SecretStr
+    channel_id: str
 
     redis: Redis
     fsm_mode: FSMModeEnum
