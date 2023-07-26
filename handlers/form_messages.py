@@ -6,6 +6,8 @@ from aiogram import F
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from keyboards.for_messages import (
     get_keyboard_confirm,
     ConfirmCallbackFactory, get_comment_kb
@@ -16,7 +18,11 @@ from keyboards.common_kb import (
     ItemsCallbackFactory
 )
 
-from keyboards.for_options import available_purposes, available_projects, available_types
+from db.requests import (
+    get_projects,
+    get_types,
+    get_purposes
+)
 
 
 router = Router()
@@ -33,12 +39,13 @@ class AddMessage(StatesGroup):
 
 def data_repr(data: dict) -> str:
     strings = []
-    for key, value in data.items():
-        if key == 'attached_file':
-            value = value.file_name
-        if key == 'attached_photo':
-            continue
-        strings.append(f' {key}: {value}')
+    if 'attached_file' in data:
+        value = data['attached_file'][1]
+        strings.append(f' attached_file: {value}')
+    for key in ('project', 'type', 'purpose'):
+        key_objs = key + 's'
+        if key in data and key_objs in data:
+            strings.append(f' {key}: {data[key_objs][data[key]]}')
     return '\n'.join(strings)
 
 
@@ -48,42 +55,53 @@ async def cmd_start(message: Message, state: FSMContext):
         'Прикрепите файл'
     )
     await state.set_state(AddMessage.attaching_file)
-    # print(type(await state.get_state()))
 
 
-async def attached(message: Message, state: FSMContext):
+async def attached(message: Message, state: FSMContext, session: AsyncSession):
+    projects = {p.id: p.name for p in await get_projects(session)}
+    await state.update_data(projects=projects)
+
     await message.answer(
         text='Выберите проект:',
-        reply_markup=get_keyboard_fab(available_projects, 'projects')
+        reply_markup=get_keyboard_fab(
+            ((uid, name) for uid, name in projects.items()),
+            'projects'
+        )
     )
     await state.set_state(AddMessage.choosing_project)
 
 
 @router.message(AddMessage.attaching_file, F.document)
-async def file_attached(message: Message, state: FSMContext):
-    await state.update_data(attached_file=message.document)
-    await attached(message, state)
+async def file_attached(message: Message, state: FSMContext, session: AsyncSession):
+    await state.update_data(attached_file=(message.document.file_id,
+                                           message.document.file_name))
+    await attached(message, state, session)
 
 
 @router.message(AddMessage.attaching_file, F.photo)
-async def file_attached(message: Message, state: FSMContext):
-    await state.update_data(attached_photo=message.photo[-1])
-    await attached(message, state)
+async def photo_attached(message: Message, state: FSMContext, session: AsyncSession):
+    await state.update_data(attached_photo=message.photo[-1].file_id)
+    await attached(message, state, session)
 
 
 @router.callback_query(AddMessage.choosing_project,
                        ItemsCallbackFactory.filter(F.name == 'projects'))
 async def project_chosen(callback: CallbackQuery,
                          callback_data: ItemsCallbackFactory,
-                         state: FSMContext):
-    await state.update_data(project=callback_data.value)
-    data = await state.get_data()
-    # print(type(data))
+                         state: FSMContext,
+                         session: AsyncSession):
+    types = {p.id: p.name for p in await get_types(session)}
+    await state.update_data(project=callback_data.value, types=types)
 
+    data = await state.get_data()
     text = f'Вы ввели: \n{data_repr(data)}\n' + 'Выберите тип:'
     await callback.message.edit_text(text)
+
     await callback.message.edit_reply_markup(
-        reply_markup=get_keyboard_fab(available_types, 'types')
+        reply_markup=get_keyboard_fab(
+            ((uid, name) for uid, name in types.items()),
+            'types'
+        )
     )
     # await callback.message.answer(
     #     text='Выберите тип:',
@@ -96,14 +114,19 @@ async def project_chosen(callback: CallbackQuery,
                        ItemsCallbackFactory.filter(F.name == 'types'))
 async def type_chosen(callback: CallbackQuery,
                       callback_data: ItemsCallbackFactory,
-                      state: FSMContext):
-    await state.update_data(type=callback_data.value)
+                      state: FSMContext,
+                      session: AsyncSession):
+    purposes = {p.id: p.name for p in await get_purposes(session)}
+    await state.update_data(type=callback_data.value, purposes=purposes)
 
     data = await state.get_data()
     text = f'Вы ввели: \n{data_repr(data)}\n' + 'Выберите назначение:'
     await callback.message.edit_text(text)
     await callback.message.edit_reply_markup(
-        reply_markup=get_keyboard_fab(available_purposes, 'purposes')
+        reply_markup=get_keyboard_fab(
+            ((uid, name) for uid, name in purposes.items()),
+            'purposes'
+        )
     )
     # await callback.message.answer(
     #     text='Выберите назначение:',

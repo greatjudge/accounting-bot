@@ -1,0 +1,26 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: "accbotdb"
+      POSTGRES_USER: "botuser"
+      POSTGRES_PASSWORD: "pgpwd4accbot"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      - "5435:5432"
+    volumes:
+      - botdb-data:/var/lib/postgresql/data
+    restart: always
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6380:6379"
+    command: redis-server --loglevel warning --save 20 1
+    volumes:
+      - redis-data:/data
+
+volumes:
+  botdb-data:
+  redis-data:

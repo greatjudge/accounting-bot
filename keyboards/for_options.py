@@ -1,13 +1,9 @@
+from enum import Enum
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
-
-from aiogram.filters.callback_data import CallbackData
-from enum import Enum
-
-
-available_projects = ["первый", "тва", "тари", "фо"]
-available_types = ['type', 'тип', "tipo", "тып"]
-available_purposes = ['cola', 'pepsi', 'mango', 'сто']
+from db.models import (
+    Project, Type, Purpose
+)
 
 
 class Option(Enum):
@@ -18,9 +14,9 @@ class Option(Enum):
     @classmethod
     def option2storage(cls):
         return {
-            cls.project.value: available_projects,
-            cls.type.value: available_types,
-            cls.purpose.value: available_types
+            cls.project.value: Project,
+            cls.type.value: Type,
+            cls.purpose.value: Purpose
         }
 
     @classmethod

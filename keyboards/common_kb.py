@@ -2,7 +2,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardButton
 
-from typing import Optional
+from typing import Iterable
 
 
 CANCEL_BUTTON = InlineKeyboardButton(text='Отменить',
@@ -11,17 +11,19 @@ CANCEL_BUTTON = InlineKeyboardButton(text='Отменить',
 
 class ItemsCallbackFactory(CallbackData, prefix='item'):
     name: str
-    value: str
+    value: int | str
 
 
-def get_keyboard_fab(items: list[str],
+def get_keyboard_fab(items: Iterable[tuple[int, str]],
                      name: str,
-                     add_cancel: bool = True):
+                     add_cancel: bool = True,
+                     value_text: bool = False):
     builder = InlineKeyboardBuilder()
-    for item in items:
+    for uid, text in items:
+        value = text if value_text else uid
         builder.button(
-            text=item,
-            callback_data=ItemsCallbackFactory(name=name, value=item)
+            text=text,
+            callback_data=ItemsCallbackFactory(name=name, value=value)
         )
 
     if add_cancel:
