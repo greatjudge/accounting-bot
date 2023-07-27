@@ -4,20 +4,39 @@ from keyboards.for_options import Option
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from db.models import (
-    AccMessage,
+    User,
     Project,
     Type,
     Purpose
 )
 
 
-async def add_accmessage(session, project: str,
-                         type: str, purpose: str,
-                         create_time: datetime):
-    new_accmes = AccMessage(project=project, type=type,
-                            purpose=purpose, create_time=create_time)
-    session.add(new_accmes)
+async def add_user(
+        session: AsyncSession,
+        uid: int,
+        is_admin: bool = False
+):
+    usr = User(id=uid, is_admin=is_admin)
+    session.add(usr)
     await session.commit()
+
+
+async def get_user(session: AsyncSession,
+                   uid: int) -> User:
+    result = await session.execute(select(User).where(User.id == uid))
+    return result.scalar()
+
+
+async def user_in_db(session: AsyncSession,
+                     uid: int) -> bool:
+    result = await session.execute(select(User).where(User.id == uid))
+    print('RESULT:', result)
+    return bool(result.scalars())
+
+
+async def user_list(session: AsyncSession):
+    result = await session.execute(select(User))
+    return result.scalars()
 
 
 async def get_option_values(session: AsyncSession, option_cls):

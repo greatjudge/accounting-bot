@@ -6,19 +6,11 @@ from sqlalchemy import DateTime
 from db.base import Base
 
 
-class AccMessage(Base):
-    __tablename__ = 'acc_messages'
+class User(Base):
+    __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    project: Mapped[str]
-    type: Mapped[str]
-    purpose: Mapped[str]
-    comment: Mapped[str]
-    filename: Mapped[str]
-    create_time: Mapped[datetime] = mapped_column(DateTime())
-
-    def __repr__(self):
-        return f'AccMessage({self.project}, {self.type}, {self.purpose}, {self.create_time})'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    is_admin: Mapped[bool] = mapped_column(default=False)
 
 
 class Project(Base):

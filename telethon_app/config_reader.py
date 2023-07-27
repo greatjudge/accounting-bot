@@ -1,9 +1,10 @@
 from pydantic_settings import BaseSettings
-from pydantic import SecretStr, DirectoryPath
+from pydantic import SecretStr
 
 
 class Settings(BaseSettings):
     channel_id: int
+    upload_destination_id: int
 
     api_id: SecretStr
     api_hash: SecretStr

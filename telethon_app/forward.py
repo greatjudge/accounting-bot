@@ -24,7 +24,7 @@ async def forward_mes_for_month(date: datetime, text: str):
                     msg.date.month == date.month)):
                 msg_ids.append(msg.id)
         await tel_client.forward_messages(
-            tel_config.channel_id,
+            tel_config.upload_destination_id,
             msg_ids,
             tel_config.channel_id
         )

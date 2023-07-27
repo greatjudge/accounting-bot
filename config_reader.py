@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     bot_token: SecretStr
     channel_id: str
 
+    admins: list[int]
+
     redis: Redis
     fsm_mode: FSMModeEnum
 
