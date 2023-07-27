@@ -23,8 +23,6 @@ class Settings(BaseSettings):
     redis: Redis
     fsm_mode: FSMModeEnum
 
-    file_directory: DirectoryPath
-
     db_addr: str
     db_name: str
     db_user: str

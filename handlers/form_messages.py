@@ -41,7 +41,7 @@ def data_repr(data: dict, add_filename: bool = True) -> str:
     strings = []
     if add_filename and 'attached_file' in data:
         value = data['attached_file'][1]
-        strings.append(f' файл: {value}')
+        strings.append(f'файл: {value}')
 
     for key, name in (
             ('project', 'проект'),
@@ -50,9 +50,9 @@ def data_repr(data: dict, add_filename: bool = True) -> str:
     ):
         key_objs = key + 's'
         if key in data and key_objs in data:
-            strings.append(f' {name}: {data[key_objs][data[key]]}')
+            strings.append(f'{name}: {data[key_objs][data[key]]}')
     if 'comment' in data:
-        strings.append(f' комментарий: {data["comment"]}')
+        strings.append(f'комментарий: {data["comment"]}')
     return '\n'.join(strings)
 
 
@@ -166,6 +166,7 @@ async def logic_after_comment(message: Message, state: FSMContext):
 @router.callback_query(AddMessage.comment, F.data == 'no_comment')
 async def no_comment_callback(callback: CallbackQuery,
                               state: FSMContext):
+    await callback.answer()
     await logic_after_comment(callback.message, state)
 
 

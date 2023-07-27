@@ -7,10 +7,12 @@ from aiogram.fsm.storage.redis import RedisStorage
 
 from config_reader import config, FSMModeEnum
 
-from handlers import common, form_messages, edit_options
+from handlers import common, form_messages, edit_options, uploading_mes
 from middlewares.db import DbSessionMiddleware
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+from telethon_app.forward import tel_client
 
 
 async def main():
@@ -33,7 +35,10 @@ async def main():
 
     dp = Dispatcher(storage=storage)
     dp.update.middleware(DbSessionMiddleware(session_pool=sessionmaker))
-    dp.include_routers(common.router, form_messages.router, edit_options.router)
+    dp.include_routers(
+        common.router, form_messages.router,
+        edit_options.router, uploading_mes.router
+    )
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
@@ -41,3 +46,4 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+    # tel_client.start()
