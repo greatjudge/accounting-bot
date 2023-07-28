@@ -98,7 +98,7 @@ async def adding_admin(message: Message, state: FSMContext, session: AsyncSessio
         else:
             user.is_admin = True
             await session.commit()
-            text = f'пользователь с id {user.id} успешно получил права администратора'
+            text = f'пользователь с id {uid} успешно получил права администратора'
         await message.answer(text=text)
     except ValueError:
         await message.answer(text='id должен быть целым числом')
