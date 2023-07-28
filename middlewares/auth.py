@@ -13,8 +13,12 @@ class AuthMiddleware(BaseMiddleware):
             update: Update,
             data: Dict[str, Any]
     ) -> Any:
-        print('DIR', dir(update.event))
         user = await get_user(data['session'], update.event.from_user.id)
         if user is not None:
             data['user'] = user
             return await handler(update, data)
+        else:
+            await data['bot'].send_message(
+                update.event.from_user.id,
+                'У вас нет прав, обратитесь к администратору'
+            )

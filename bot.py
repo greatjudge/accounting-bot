@@ -7,15 +7,24 @@ from aiogram.fsm.storage.redis import RedisStorage
 
 from config_reader import config, FSMModeEnum
 
-from handlers import common, form_messages, edit_options, uploading_mes
+from handlers import common, form_messages, edit_options, uploading_mes, users
 
 from middlewares.db import DbSessionMiddleware
 from middlewares.auth import AuthMiddleware
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.exc import IntegrityError
 
-# from db.requests import add_admins
+from db.requests import add_user
 from db.base import Base
+
+
+async def add_admins(session, usr_ids: list[int]):
+    for uid in usr_ids:
+        try:
+            await add_user(session, uid, is_admin=True)
+        except IntegrityError:
+            pass
 
 
 async def main():
@@ -30,8 +39,8 @@ async def main():
 
     sessionmaker = async_sessionmaker(engine)
 
-    # async with sessionmaker() as session:
-    #     await add_admins(session, config.admins)
+    async with sessionmaker() as session:
+        await add_admins(session, config.admins)
 
 
     if config.fsm_mode == FSMModeEnum.MEMORY:
@@ -51,7 +60,8 @@ async def main():
 
     dp.include_routers(
         common.router, form_messages.router,
-        edit_options.router, uploading_mes.router
+        edit_options.router, uploading_mes.router,
+        users.router
     )
 
     await bot.delete_webhook(drop_pending_updates=True)
