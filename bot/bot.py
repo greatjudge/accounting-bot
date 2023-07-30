@@ -16,7 +16,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 from db.requests import add_user
-from db.base import Base
 
 
 async def add_admins(session, usr_ids: list[int]):
@@ -38,9 +37,6 @@ async def main():
 
     sqlite_url = "sqlite+aiosqlite:///bot.db"
     engine = create_async_engine(sqlite_url, echo=True)
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
     sessionmaker = async_sessionmaker(engine)
 
@@ -70,7 +66,6 @@ async def main():
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
-
 
 if __name__ == '__main__':
     asyncio.run(main())

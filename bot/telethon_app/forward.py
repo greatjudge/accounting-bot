@@ -12,10 +12,10 @@ tel_client = TelegramClient(
 )
 
 
-async def forward_mes_for_month(date: datetime, text: str):
+async def forward_mes_for_month(chat_id: int, date: datetime, text: str):
     async with tel_client:
         await tel_client.send_message(
-            config.upload_destination_id,
+            chat_id,
             f'ВЫГРУЗКА {text}:'
         )
         msg_ids = []
@@ -27,8 +27,8 @@ async def forward_mes_for_month(date: datetime, text: str):
                     msg.date.month == date.month)):
                 msg_ids.append(msg.id)
         await tel_client.forward_messages(
-            config.upload_destination_id,
+            chat_id,
             msg_ids,
             config.channel_id
         )
-        await tel_client.send_message(config.channel_id, 'Конец выгрузки.')
+        await tel_client.send_message(chat_id, 'Конец выгрузки.')

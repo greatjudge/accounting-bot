@@ -1,7 +1,10 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import BIGINT
+from sqlalchemy.orm import DeclarativeBase
 
-from db.base import Base
+
+class Base(DeclarativeBase):
+    pass
 
 
 class User(Base):
