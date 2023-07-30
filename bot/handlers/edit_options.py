@@ -7,10 +7,10 @@ from aiogram.fsm.state import StatesGroup, State
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from keyboards.for_options import get_options_kb, Option, Action, get_actions_kb, get_confirm_kb
-from keyboards.common_kb import get_keyboard_fab, ItemsCallbackFactory
+from bot.keyboards.for_options import get_options_kb, Option, Action, get_actions_kb, get_confirm_kb
+from bot.keyboards.common_kb import get_keyboard_fab, ItemsCallbackFactory
 
-from db.requests import (
+from bot.db.requests import (
     add_option,
     get_option_values,
     delete_option

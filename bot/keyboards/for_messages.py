@@ -3,7 +3,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from aiogram.filters.callback_data import CallbackData
 
-from keyboards.common_kb import CANCEL_BUTTON
+from bot.keyboards.common_kb import CANCEL_BUTTON
 from typing import Optional
 
 

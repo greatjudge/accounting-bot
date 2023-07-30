@@ -7,9 +7,9 @@ from aiogram.fsm.state import StatesGroup, State
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.requests import get_user, add_user
+from bot.db.requests import get_user, add_user
 
-from filters.permissions import IsAdmin
+from bot.filters.permissions import IsAdmin
 
 
 router = Router()

@@ -3,7 +3,7 @@ from typing import Union
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
-from db.models import User
+from bot.db.models import User
 
 
 class IsAdmin(BaseFilter):

@@ -6,3 +6,5 @@ files/
 .idea
 
 *.db
+
+*.log

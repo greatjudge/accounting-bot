@@ -3,7 +3,7 @@ from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardBut
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
 
-from db.models import (
+from bot.db.models import (
     Project, Type, Purpose
 )
 

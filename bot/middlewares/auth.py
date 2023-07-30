@@ -3,7 +3,7 @@ from typing import Callable, Awaitable, Dict, Any
 from aiogram import BaseMiddleware
 from aiogram.types import Update, Message, CallbackQuery
 
-from db.requests import get_user
+from bot.db.requests import get_user
 
 
 class AuthMiddleware(BaseMiddleware):

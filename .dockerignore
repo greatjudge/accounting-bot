@@ -5,3 +5,5 @@ files
 .env.db
 .env.telapp
 .idea
+
+*.log

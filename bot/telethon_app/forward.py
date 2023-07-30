@@ -1,5 +1,5 @@
 from datetime import datetime
-from config_reader import config
+from bot.config_reader import config
 
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession

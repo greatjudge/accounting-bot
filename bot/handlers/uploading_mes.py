@@ -2,7 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 
-from telethon_app.forward import forward_mes_for_month
+from bot.telethon_app.forward import forward_mes_for_month
 
 from datetime import timedelta
 

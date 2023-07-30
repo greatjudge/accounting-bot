@@ -7,18 +7,18 @@ from aiogram.fsm.context import FSMContext
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config_reader import config
-from keyboards.for_messages import (
+from bot.config_reader import config
+from bot.keyboards.for_messages import (
     get_keyboard_confirm,
     ConfirmCallbackFactory, get_comment_kb
 )
 
-from keyboards.common_kb import (
+from bot.keyboards.common_kb import (
     get_keyboard_fab,
     ItemsCallbackFactory
 )
 
-from db.requests import (
+from bot.db.requests import (
     get_projects,
     get_types,
     get_purposes

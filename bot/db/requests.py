@@ -1,8 +1,8 @@
-from keyboards.for_options import Option
+from bot.keyboards.for_options import Option
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from db.models import (
+from bot.db.models import (
     User,
     Project,
     Type,
