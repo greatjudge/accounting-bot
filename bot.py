@@ -28,7 +28,9 @@ async def add_admins(session, usr_ids: list[int]):
 
 
 async def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO
+    )
 
     # postgres db url
     # postgres_url = f'postgresql+psycopg://{config.db_user}:{config.db_password}' \

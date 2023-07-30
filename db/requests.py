@@ -1,4 +1,3 @@
-from datetime import datetime
 from keyboards.for_options import Option
 
 from sqlalchemy.ext.asyncio import AsyncSession
