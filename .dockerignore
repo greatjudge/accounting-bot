@@ -1,5 +1,6 @@
-env/
-files/
+.git
+env
+files
 .env
 .env.db
 .env.telapp

@@ -30,9 +30,12 @@ async def add_admins(session, usr_ids: list[int]):
 async def main():
     logging.basicConfig(level=logging.INFO)
 
-    db_url = f'postgresql+psycopg://{config.db_user}:{config.db_password}' \
-             f'@{config.db_addr}/{config.db_name}'
-    engine = create_async_engine(db_url, echo=True)
+    # postgres db url
+    # postgres_url = f'postgresql+psycopg://{config.db_user}:{config.db_password}' \
+    #          f'@{config.db_addr}/{config.db_name}'
+
+    sqlite_url = "sqlite+aiosqlite:///bot.db"
+    engine = create_async_engine(sqlite_url, echo=True)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -41,7 +44,6 @@ async def main():
 
     async with sessionmaker() as session:
         await add_admins(session, config.admins)
-
 
     if config.fsm_mode == FSMModeEnum.MEMORY:
         storage = MemoryStorage()

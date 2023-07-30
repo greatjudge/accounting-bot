@@ -1,5 +1,15 @@
 version: "3.9"
 services:
+  postgres:
+    container_name: postgres-bot
+    image: postgres
+    env_file:
+      - .env.db
+    environment:
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - botdb-data:/var/lib/postgresql/data
+    restart: unless-stopped
   redis:
     image: redis
     restart: unless-stopped
@@ -11,8 +21,10 @@ services:
     env_file:
       - .env
     depends_on:
+      - postgres
       - redis
     restart: unless-stopped
 
 volumes:
+  botdb-data:
   redis-data:

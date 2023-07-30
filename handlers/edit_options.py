@@ -79,7 +79,17 @@ async def remove_chosen(message: Message, state: FSMContext, session: AsyncSessi
 
     option_cls = Option.option2storage()[data['option']]
     option_values = await get_option_values(session, option_cls)
+
     option_id_name = {opt.id: opt.name for opt in option_values}
+
+    if not option_id_name:
+        await message.answer(
+            text='Нечего удалять',
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await state.clear()
+        return
+
     await state.update_data(option_id_name=option_id_name)
 
     await message.answer(

@@ -66,6 +66,11 @@ async def cmd_start(message: Message, state: FSMContext):
 
 async def attached(message: Message, state: FSMContext, session: AsyncSession):
     projects = {p.id: p.name for p in await get_projects(session)}
+
+    if not projects:
+        await if_empty_list(message, 'проект')
+        return
+
     await state.update_data(projects=projects)
 
     await message.answer(
@@ -91,6 +96,14 @@ async def photo_attached(message: Message, state: FSMContext, session: AsyncSess
     await attached(message, state, session)
 
 
+async def if_empty_list(event, name: str):
+    if isinstance(event, CallbackQuery):
+        event = event.message
+    await event.answer(
+        text=f'Список пуст, добавьте {name} с помощью команды /edit'
+    )
+
+
 @router.callback_query(AddMessage.choosing_project,
                        ItemsCallbackFactory.filter(F.name == 'projects'))
 async def project_chosen(callback: CallbackQuery,
@@ -98,6 +111,11 @@ async def project_chosen(callback: CallbackQuery,
                          state: FSMContext,
                          session: AsyncSession):
     types = {p.id: p.name for p in await get_types(session)}
+
+    if not types:
+        await if_empty_list(callback, 'тип')
+        return
+
     await state.update_data(project=callback_data.value, types=types)
 
     data = await state.get_data()
@@ -121,6 +139,11 @@ async def type_chosen(callback: CallbackQuery,
                       state: FSMContext,
                       session: AsyncSession):
     purposes = {p.id: p.name for p in await get_purposes(session)}
+
+    if not purposes:
+        await if_empty_list(callback, 'назначение')
+        return
+
     await state.update_data(type=callback_data.value, purposes=purposes)
 
     data = await state.get_data()
@@ -184,10 +207,7 @@ async def send(callback: CallbackQuery,
                bot: Bot):
     data = await state.get_data()
 
-    await send_message2channel(
-        bot,
-        data
-    )
+    await send_message2channel(bot, data)
 
     text = f'Вы отправили: \n{data_repr(data)}'
     await callback.message.edit_text(text)
