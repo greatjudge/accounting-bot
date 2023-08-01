@@ -1,5 +1,7 @@
 from bot.keyboards.for_options import Option
 
+from sqlalchemy.exc import IntegrityError
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from bot.db.models import (
@@ -8,6 +10,14 @@ from bot.db.models import (
     Type,
     Purpose
 )
+
+
+async def add_admins(session, usr_ids: list[int]):
+    for uid in usr_ids:
+        try:
+            await add_user(session, uid, is_admin=True)
+        except IntegrityError:
+            pass
 
 
 async def add_user(

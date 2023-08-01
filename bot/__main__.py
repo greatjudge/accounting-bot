@@ -6,7 +6,6 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.exc import IntegrityError
 
 from bot.config_reader import config, FSMModeEnum
 from bot.handlers import common, form_messages, edit_options, uploading_mes, users
@@ -14,31 +13,9 @@ from bot.handlers import common, form_messages, edit_options, uploading_mes, use
 from bot.middlewares.db import DbSessionMiddleware
 from bot.middlewares.auth import AuthMiddleware
 
-from bot.db.requests import add_user
+from bot.db.requests import add_admins
 
-
-def config_filelog(filename: str):
-    format_file = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(message)s'
-    )
-    log_handler = logging.FileHandler(filename)
-    log_handler.setLevel(logging.DEBUG)
-    log_handler.setFormatter(format_file)
-
-    for logger_name in [
-        'sqlalchemy', 'aiogram.dispatcher',
-        'aiogram.event', 'aiogram.middlewares',
-        'aiogram.webhook'
-    ]:
-        logging.getLogger(logger_name).addHandler(log_handler)
-
-
-async def add_admins(session, usr_ids: list[int]):
-    for uid in usr_ids:
-        try:
-            await add_user(session, uid, is_admin=True)
-        except IntegrityError:
-            pass
+from bot.utils import config_filelog, set_commands
 
 
 async def main():
@@ -79,6 +56,7 @@ async def main():
     )
 
     await bot.delete_webhook(drop_pending_updates=True)
+    await set_commands(bot)
     await dp.start_polling(bot)
 
 if __name__ == '__main__':

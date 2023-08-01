@@ -19,17 +19,11 @@ class FSMModeEnum(str, Enum):
 class Settings(BaseSettings):
     bot_token: SecretStr
     channel_id: int
-    upload_destination_id: int
 
     admins: list[int]
 
     redis: Redis
     fsm_mode: FSMModeEnum
-
-    db_addr: str
-    db_name: str
-    db_user: str
-    db_password: str
 
     api_id: SecretStr
     api_hash: SecretStr
