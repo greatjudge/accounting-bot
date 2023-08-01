@@ -1,0 +1,18 @@
+[Unit]
+Description=Telegram Bot
+Requires=redis.service
+After=network.target redis.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/bot/accounting-bot
+ExecStart=/home/bot/accounting-bot/env/bin/python -m bot
+User=bot
+Group=bot
+EnvironmentFile=/home/bot/accounting-bot/.env
+KillMode=process
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
