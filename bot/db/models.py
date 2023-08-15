@@ -20,6 +20,9 @@ class Project(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str]
 
+    verbose_name = 'проект'
+    verbose_name_plural = 'проекты'
+
 
 class Type(Base):
     __tablename__ = 'types'
@@ -27,9 +30,15 @@ class Type(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str]
 
+    verbose_name = 'тип'
+    verbose_name_plural = 'типы'
+
 
 class Purpose(Base):
     __tablename__ = 'purposes'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str]
+
+    verbose_name = 'цель'
+    verbose_name_plural = 'цели'

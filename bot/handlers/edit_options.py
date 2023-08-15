@@ -12,7 +12,7 @@ from bot.keyboards.common_kb import get_keyboard_fab, ItemsCallbackFactory
 
 from bot.db.requests import (
     add_option,
-    get_option_values,
+    get_options,
     delete_option
 )
 
@@ -78,7 +78,7 @@ async def remove_chosen(message: Message, state: FSMContext, session: AsyncSessi
     data = await state.get_data()
 
     option_cls = Option.option2storage()[data['option']]
-    option_values = await get_option_values(session, option_cls)
+    option_values = await get_options(session, option_cls)
 
     option_id_name = {opt.id: opt.name for opt in option_values}
 

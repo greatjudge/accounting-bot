@@ -39,7 +39,6 @@ async def get_user(session: AsyncSession,
 async def user_in_db(session: AsyncSession,
                      uid: int) -> bool:
     result = await session.execute(select(User).where(User.id == uid))
-    print('RESULT:', result)
     return bool(result.scalars())
 
 
@@ -48,21 +47,21 @@ async def user_list(session: AsyncSession):
     return result.scalars()
 
 
-async def get_option_values(session: AsyncSession, option_cls):
+async def get_options(session: AsyncSession, option_cls):
     result = await session.execute(select(option_cls))
     return result.scalars()
 
 
 async def get_projects(session: AsyncSession):
-    return await get_option_values(session, Project)
+    return await get_options(session, Project)
 
 
 async def get_types(session: AsyncSession):
-    return await get_option_values(session, Type)
+    return await get_options(session, Type)
 
 
 async def get_purposes(session: AsyncSession):
-    return await get_option_values(session, Purpose)
+    return await get_options(session, Purpose)
 
 
 async def add_option(session, option_cls, name: str):

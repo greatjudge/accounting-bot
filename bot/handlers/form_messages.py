@@ -18,10 +18,14 @@ from bot.keyboards.common_kb import (
     ItemsCallbackFactory
 )
 
+from bot.db.models import (
+    Project,
+    Type,
+    Purpose
+)
+
 from bot.db.requests import (
-    get_projects,
-    get_types,
-    get_purposes
+    get_options
 )
 
 
@@ -30,9 +34,9 @@ router = Router()
 
 class AddMessage(StatesGroup):
     attaching_file = State()
-    choosing_project = State()
-    choosing_type = State()
-    choosing_purpose = State()
+    choosing_first = State()
+    choosing_second = State()
+    choosing_third = State()
     comment = State()
     confirmation = State()
 
@@ -43,14 +47,11 @@ def data_repr(data: dict, add_filename: bool = True) -> str:
         value = data['attached_file'][1]
         strings.append(f'файл: {value}')
 
-    for key, name in (
-            ('project', 'проект'),
-            ('type', 'тип'),
-            ('purpose', 'назначение')
-    ):
-        key_objs = key + 's'
-        if key in data and key_objs in data:
-            strings.append(f'{name}: {data[key_objs][data[key]]}')
+    for cls in (Project, Type, Purpose):
+        if cls.__name__ in data:
+            strings.append(
+                f'{cls.verbose_name}: {data[cls.__name__ + "s"][int(data[cls.__name__])]}'
+            )
     if 'comment' in data:
         strings.append(f'комментарий: {data["comment"]}')
     return '\n'.join(strings)
@@ -64,23 +65,49 @@ async def cmd_start(message: Message, state: FSMContext):
     await state.set_state(AddMessage.attaching_file)
 
 
-async def attached(message: Message, state: FSMContext, session: AsyncSession):
-    projects = {p.id: p.name for p in await get_projects(session)}
-
-    if not projects:
-        await if_empty_list(message, 'проект')
-        return
-
-    await state.update_data(projects=projects)
-
-    await message.answer(
-        text='Выберите проект:',
-        reply_markup=get_keyboard_fab(
-            ((uid, name) for uid, name in projects.items()),
-            'projects'
-        )
+async def if_empty_list(event, name: str):
+    if isinstance(event, CallbackQuery):
+        event = event.message
+    await event.answer(
+        text=f'Список пуст, добавьте {name} с помощью команды /edit'
     )
-    await state.set_state(AddMessage.choosing_project)
+
+
+async def choose_option(
+        event: Message | CallbackQuery,
+        state: FSMContext,
+        session: AsyncSession,
+        opt_cls
+):
+    options = {opt.id: opt.name for opt in await get_options(session, opt_cls)}
+    if not options:
+        await if_empty_list(event, opt_cls.verbose_name)
+        return
+    data = await state.get_data()
+
+    text = f'Выберите {opt_cls.verbose_name}:'
+    data_text = data_repr(data)
+    if data_text:
+        text = f'Вы ввели: \n{data_text}\n' + text
+
+    markup = get_keyboard_fab(
+        ((uid, name) for uid, name in options.items()),
+        opt_cls.__name__
+    )
+
+    await state.update_data({opt_cls.__name__ + 's': options})
+
+    if isinstance(event, Message):
+        await event.answer(text=text, reply_markup=markup)
+    elif isinstance(event, CallbackQuery):
+        await event.message.edit_text(text)
+        await event.message.edit_reply_markup(reply_markup=markup)
+        await event.answer()
+
+
+async def attached(message: Message, state: FSMContext, session: AsyncSession):
+    await choose_option(message, state, session, Project)
+    await state.set_state(AddMessage.choosing_first)
 
 
 @router.message(AddMessage.attaching_file, F.document)
@@ -96,79 +123,45 @@ async def photo_attached(message: Message, state: FSMContext, session: AsyncSess
     await attached(message, state, session)
 
 
-async def if_empty_list(event, name: str):
-    if isinstance(event, CallbackQuery):
-        event = event.message
-    await event.answer(
-        text=f'Список пуст, добавьте {name} с помощью команды /edit'
-    )
+@router.callback_query(AddMessage.choosing_first,
+                       ItemsCallbackFactory.filter(F.name == Project.__name__))
+async def first_chosen(
+        callback: CallbackQuery,
+        callback_data: ItemsCallbackFactory,
+        state: FSMContext,
+        session: AsyncSession
+):
+    await state.update_data({Project.__name__: callback_data.value})
+    await choose_option(callback, state, session, Type)
+    await state.set_state(AddMessage.choosing_second)
 
 
-@router.callback_query(AddMessage.choosing_project,
-                       ItemsCallbackFactory.filter(F.name == 'projects'))
-async def project_chosen(callback: CallbackQuery,
-                         callback_data: ItemsCallbackFactory,
-                         state: FSMContext,
-                         session: AsyncSession):
-    types = {p.id: p.name for p in await get_types(session)}
-
-    if not types:
-        await if_empty_list(callback, 'тип')
-        return
-
-    await state.update_data(project=callback_data.value, types=types)
-
-    data = await state.get_data()
-    text = f'Вы ввели: \n{data_repr(data)}\n' + 'Выберите тип:'
-    await callback.message.edit_text(text)
-
-    await callback.message.edit_reply_markup(
-        reply_markup=get_keyboard_fab(
-            ((uid, name) for uid, name in types.items()),
-            'types'
-        )
-    )
-
-    await state.set_state(AddMessage.choosing_type)
+@router.callback_query(AddMessage.choosing_second,
+                       ItemsCallbackFactory.filter(F.name == Type.__name__))
+async def second_chosen(
+        callback: CallbackQuery,
+        callback_data: ItemsCallbackFactory,
+        state: FSMContext,
+        session: AsyncSession
+):
+    await state.update_data({Type.__name__: callback_data.value})
+    await choose_option(callback, state, session, Purpose)
+    await state.set_state(AddMessage.choosing_third)
 
 
-@router.callback_query(AddMessage.choosing_type,
-                       ItemsCallbackFactory.filter(F.name == 'types'))
-async def type_chosen(callback: CallbackQuery,
-                      callback_data: ItemsCallbackFactory,
-                      state: FSMContext,
-                      session: AsyncSession):
-    purposes = {p.id: p.name for p in await get_purposes(session)}
-
-    if not purposes:
-        await if_empty_list(callback, 'назначение')
-        return
-
-    await state.update_data(type=callback_data.value, purposes=purposes)
-
-    data = await state.get_data()
-    text = f'Вы ввели: \n{data_repr(data)}\n' + 'Выберите назначение:'
-    await callback.message.edit_text(text)
-    await callback.message.edit_reply_markup(
-        reply_markup=get_keyboard_fab(
-            ((uid, name) for uid, name in purposes.items()),
-            'purposes'
-        )
-    )
-
-    await callback.answer()
-    await state.set_state(AddMessage.choosing_purpose)
-
-
-@router.callback_query(AddMessage.choosing_purpose,
-                       ItemsCallbackFactory.filter(F.name == 'purposes'))
-async def purpose_chosen(callback: CallbackQuery,
-                         callback_data: ItemsCallbackFactory,
-                         state: FSMContext):
-    await state.update_data(purpose=callback_data.value)
+@router.callback_query(
+    AddMessage.choosing_third,
+    ItemsCallbackFactory.filter(F.name == Purpose.__name__))
+async def third_chosen(
+        callback: CallbackQuery,
+        callback_data: ItemsCallbackFactory,
+        state: FSMContext
+):
+    await state.update_data({Purpose.__name__: callback_data.value})
 
     data = await state.get_data()
     text = f'Вы ввели: \n{data_repr(data)}\n' + 'Введите комментарий:'
+
     await callback.message.edit_text(text)
     await callback.message.edit_reply_markup(reply_markup=get_comment_kb())
 
@@ -199,22 +192,6 @@ async def comment_written(message: Message, state: FSMContext):
     await logic_after_comment(message, state)
 
 
-@router.callback_query(AddMessage.confirmation,
-                       ConfirmCallbackFactory.filter(F.value == 'send'))
-async def send(callback: CallbackQuery,
-               callback_data: ConfirmCallbackFactory,
-               state: FSMContext,
-               bot: Bot):
-    data = await state.get_data()
-
-    await send_message2channel(bot, data)
-
-    text = f'Вы отправили: \n{data_repr(data)}'
-    await callback.message.edit_text(text)
-    await callback.answer()
-    await state.clear()
-
-
 async def send_message2channel(bot: Bot, data):
     caption = data_repr(data, add_filename=False)
     if 'attached_file' in data:
@@ -229,3 +206,18 @@ async def send_message2channel(bot: Bot, data):
             data['attached_photo'],
             caption=caption
         )
+
+
+@router.callback_query(AddMessage.confirmation,
+                       ConfirmCallbackFactory.filter(F.value == 'send'))
+async def send(callback: CallbackQuery,
+               state: FSMContext,
+               bot: Bot):
+    data = await state.get_data()
+
+    await send_message2channel(bot, data)
+
+    text = f'Вы отправили: \n{data_repr(data)}'
+    await callback.message.edit_text(text)
+    await callback.answer()
+    await state.clear()
