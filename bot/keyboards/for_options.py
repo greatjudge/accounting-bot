@@ -1,33 +1,20 @@
 from enum import Enum
-from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
-from aiogram.filters.callback_data import CallbackData
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from bot.db.models import (
     Project, Type, Purpose
 )
 
 
-class Option(Enum):
-    project = 'проект'
-    type = 'тип'
-    purpose = 'назначение'
-
-    @classmethod
-    def option2storage(cls):
-        return {
-            cls.project.value: Project,
-            cls.type.value: Type,
-            cls.purpose.value: Purpose
-        }
-
-    @classmethod
-    def values(cls):
-        return {item.value for item in cls}
+OPTION2CLS = {
+    Project.verbose_name: Project,
+    Type.verbose_name: Type,
+    Purpose.verbose_name: Purpose
+}
 
 
 def get_options_kb():
-    kb = [[KeyboardButton(text=item.value)] for item in Option]
+    kb = [[KeyboardButton(text=name)] for name in OPTION2CLS]
     return ReplyKeyboardMarkup(
         keyboard=kb
     )

@@ -7,7 +7,15 @@ from aiogram.fsm.state import StatesGroup, State
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.keyboards.for_options import get_options_kb, Option, Action, get_actions_kb, get_confirm_kb
+from bot.keyboards.for_options import (
+    OPTION2CLS,
+    Action,
+    get_options_kb,
+    get_actions_kb,
+    get_confirm_kb
+)
+
+
 from bot.keyboards.common_kb import get_keyboard_fab, ItemsCallbackFactory
 
 from bot.db.requests import (
@@ -40,7 +48,7 @@ async def cmd_edit(message: Message, state: FSMContext):
     await state.set_state(EditOption.choose_option)
 
 
-@router.message(EditOption.choose_option, F.text.in_(Option.values()), F.text.as_('option'))
+@router.message(EditOption.choose_option, F.text.in_(OPTION2CLS), F.text.as_('option'))
 async def option_choosed(message: Message, option: str, state: FSMContext):
     await state.update_data(option=option)
     await message.answer(
@@ -77,7 +85,7 @@ async def remove_chosen(message: Message, state: FSMContext, session: AsyncSessi
     await state.update_data(action=Action.remove.value)
     data = await state.get_data()
 
-    option_cls = Option.option2storage()[data['option']]
+    option_cls = OPTION2CLS[data['option']]
     option_values = await get_options(session, option_cls)
 
     option_id_name = {opt.id: opt.name for opt in option_values}
@@ -133,7 +141,7 @@ async def confirm(message: Message, state: FSMContext, session: AsyncSession):
 async def add_option_value(message: Message, state: FSMContext, session: AsyncSession):
     data = await state.get_data()
     await add_option(session,
-                     Option.option2storage()[data['option']],
+                     OPTION2CLS[data['option']],
                      data["option_value"])
     await message.answer(
         text=f'Cохранено {data["option"]} {data["option_value"]}',
@@ -150,7 +158,7 @@ async def remove_option(
 
     await delete_option(
         session,
-        Option.option2storage()[data['option']],
+        OPTION2CLS[data['option']],
         int(data['option_value'][0])
     )
 
